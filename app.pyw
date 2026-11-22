@@ -491,7 +491,6 @@ class App:
         if selected not in visible:
             selected = visible[0] if visible else None
         if self.active != selected and dirty:
-            # Keep an invalid unsaved editor buffer visible while filtering.
             selected = self.active
         if selected in visible:
             self.tree.selection_set(selected)

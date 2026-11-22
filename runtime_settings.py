@@ -28,7 +28,6 @@ ARCHIVES = {
     "zCustomGameConfigs.zip": "1fd90a875138534cc11a7aee802bfb4b4f08e8614ff1709796fb363e2dab9c2d",
 }
 SIGNATURE_PATH = "ue4ss/UE4SS_Signatures/StaticConstructObject.lua"
-# Whiskerwood 0.7.208.0 (UE 5.8), documented in the Miners Guild install guide.
 SIGNATURE = ("48 89 5C 24 10 48 89 6C 24 18 56 57 41 54 41 56 41 57 48 81 EC "
              "? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 84 24 ? ? ? ? 48 8B 29 33 DB 4C 8B 79 08")
 
@@ -117,7 +116,6 @@ class RuntimeSettings:
             path = self.path(name)
             if path.exists() and (name not in recorded or digest(path.read_bytes()) != recorded[name]):
                 raise ValueError(f"已有文件或文件已被修改，未覆盖：{path}")
-        # Record before writing so a partially completed install is recoverable.
         for name, data in payload.items():
             path = self.path(name)
             if path.is_file() and path.read_bytes() == data:

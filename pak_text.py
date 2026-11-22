@@ -15,8 +15,6 @@ ENTRYPOINTS = {name.casefold() for name in ENTRYPOINTS}
 LOOSE_SOURCES = {"en.txt", "en.csv", "strings.txt", "strings.csv"}
 LOCALIZATION_KEY = re.compile(r"[\w-]+(?:\.[\w-]+)+")
 STRING_CONST = re.compile(rb"\x1f([^\x00]{1,16000})\x00")
-# This cooked Blueprint form builds a one-entry map using consecutive
-# key and value conversion calls, then submits it to AddNewStrings.
 INLINE_PAIR = re.compile(
     rb"\x68(.{4})\x21(.{4})\x00{4}\x16\x0f"
     rb".{33}\x68(.{4})\x1f([^\x00]{1,16000})\x00\x16",
@@ -176,8 +174,6 @@ def _runtime_entries(mod, data):
     labels = option_labels(mod)
     matches = []
     for option, (title, _, description) in labels.items():
-        # RegisterModOptions takes the ID immediately before the display name;
-        # these cooked calls allow either raw FString fields or Kismet literals.
         marker = re.escape(option.encode() + b"\x00") + rb".{0,8}?" + re.escape(title.encode() + b"\x00")
         match = re.search(marker, data, re.DOTALL)
         if match:
