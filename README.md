@@ -1,6 +1,6 @@
 # Whiskerwood Mod 翻译
 
-![alt text](.github\assets\image.png)
+![alt text](.github/assets/image.png)
 
 如果单纯只需要汉化或者配置设置翻译的话可以直接前往releases上下载并双击 `WhiskerwoodModTranslator.exe`
 
