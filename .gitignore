@@ -3,3 +3,4 @@ __pycache__/
 build/
 data/
 nuitka-crash-report.xml
+.history/
