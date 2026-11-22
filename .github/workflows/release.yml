@@ -1,0 +1,81 @@
+name: Release Windows executable
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (for example v1.0.0)"
+        required: true
+        type: string
+      draft:
+        description: "Save the release as a draft"
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          architecture: x64
+      - name: Install Nuitka
+        run: python -m pip install Nuitka==4.3.5 zstandard==0.25.0
+      - name: Build and smoke-test Windows x64 executable
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: ./scripts/build-windows.ps1 -Version $env:RELEASE_TAG
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WhiskerwoodModTranslator-windows-x64
+          if-no-files-found: error
+          path: |
+            build/WhiskerwoodModTranslator.exe
+            build/WhiskerwoodModTranslator.exe.sha256
+
+  publish:
+    runs-on: windows-2025
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: WhiskerwoodModTranslator-windows-x64
+          path: assets
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_DRAFT: ${{ inputs.draft }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          if ($tag -notmatch '^v\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$') {
+            throw "Enter a tag such as v1.0.0 or v1.0.0-beta.1."
+          }
+          $existing = gh api "repos/$env:GITHUB_REPOSITORY/commits/$tag" --include 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            $sha = gh api "repos/$env:GITHUB_REPOSITORY/commits/$tag" --jq ".sha"
+            if ($LASTEXITCODE -ne 0 -or $sha -ne $env:GITHUB_SHA) {
+              throw "The tag points at a different commit."
+            }
+          } elseif (($existing | Out-String) -notmatch 'HTTP/\S+ 404\b') {
+            throw ($existing | Out-String)
+          }
+          $flags = @()
+          if ($env:RELEASE_DRAFT -eq "true") { $flags += "--draft" }
+          if ($tag.Contains("-")) { $flags += "--prerelease" }
+          gh release create $tag assets/WhiskerwoodModTranslator.exe assets/WhiskerwoodModTranslator.exe.sha256 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title $tag --generate-notes @flags
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Release creation failed." }
